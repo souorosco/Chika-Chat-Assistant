@@ -17,7 +17,7 @@ client.on("ready", () => {
 
 client.on("message_create", msg => {
     const command = msg.body.split(" ")[0];
-    const sender = msg.from.includes("991441213") ? msg.to : msg.from
+    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from
     if (command === "/sticker" || command === "/8ball") msg.reply("Por favor, utilize .comando no lugar de /comando")
     if (command === ".help") help(msg, sender)
     if (command === ".sticker") generateSticker(msg, sender)
@@ -28,7 +28,20 @@ client.on("message_create", msg => {
 client.initialize();
 
 const help = async (msg, sender) => {
-    await client.sendMessage(sender, "Commandos disponíveis: \n [foto] .sticker -> Transforma a imagem enviada em sticker. \n .sticker [link] -> Transforma a imagem do link em sticker. \n .8ball [pergunta] -> Responde uma resposta de uma pergunta de sim ou não. \n .roll [número] -> Rola um dado com o número de lados escolhido. Sem número ou com número inválido rolará um D6.")
+    await client.sendMessage(sender, `Os comandos disponíveis são: 🤖
+
+    🖼️
+    • [foto] .sticker -> Transforma uma imagem enviada em sticker! (não faz stickers animados)
+    • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
+    
+    🎱
+    • .8ball [pergunta] -> Responde uma pergunta de sim ou não. Descubra sua sorte!
+    
+    🎲
+    • .roll [número] -> Roda um dado do número de faces escolhido. (Em branco ou inválido rodará um D6)
+    
+    💭
+    Mais comandos em breve!`)
 }
 
 const generateSticker = async (msg, sender) => {
@@ -64,7 +77,7 @@ const eightBallMsg = async (msg) => {
             eightBallMsg = "Decididamente, sim!"; // SIM
             break;
         case 2:
-            eightBallMsg = "Incerto... tente de novo." // TALVEZ
+            eightBallMsg = "Incerto... Tente de novo." // TALVEZ
             break;
         case 3:
             eightBallMsg = "Não posso prever agora."; // TALVEZ
