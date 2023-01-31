@@ -3,7 +3,11 @@ const qrcode = require("qrcode-terminal")
 const axios = require("axios")
 
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(),
+    ffmpegPath: '/usr/bin/ffmpeg',
+    puppeteer: {
+        executablePath: '/usr/bin/google-chrome-stable'
+    }
 });
 
 
@@ -31,7 +35,7 @@ const help = async (msg, sender) => {
     await client.sendMessage(sender, `Os comandos disponíveis são: 🤖
 
     🖼️
-    • [foto] .sticker -> Transforma uma imagem enviada em sticker! (não faz stickers animados)
+    • [foto] .sticker -> Transforma uma imagem enviada em sticker! ( *NOVO:* agora funciona com gif's)
     • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
     
     🎱
@@ -45,23 +49,20 @@ const help = async (msg, sender) => {
 }
 
 const generateSticker = async (msg, sender) => {
-    if (msg.type === "image") {
+    if (msg.hasMedia) {
         try {
-            const { data } = await msg.downloadMedia()
-            const image = await new MessageMedia("image/jpeg", data, "image.jpg")
-            await client.sendMessage(sender, image, { sendMediaAsSticker: true })
+            const data = await msg.downloadMedia()
+            await client.sendMessage(sender, data, { sendMediaAsSticker: true })
         } catch (e) {
-            msg.reply("❌ Erro ao processar imagem")
+            msg.reply("❌ Não foi possível gerar um sticker com essa mídia.")
         }
     } else {
         try {
             const url = msg.body.substring(msg.body.indexOf(" ")).trim()
-            const { data } = await axios.get(url, { responseType: "arraybuffer" })
-            const returnedB64 = Buffer.from(data).toString("base64");
-            const image = await new MessageMedia("image/jpeg", returnedB64, "image.jpg")
-            await client.sendMessage(sender, image, { sendMediaAsSticker: true })
+            const data = await MessageMedia.fromUrl(url)
+            await client.sendMessage(sender, data, { sendMediaAsSticker: true })
         } catch (e) {
-            msg.reply("❌ Não foi possível gerar um sticker com esse link")
+            msg.reply("❌ Não foi possível gerar um sticker com esse link.")
         }
     }
 }
