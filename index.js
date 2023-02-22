@@ -59,21 +59,26 @@ const addTextToImage = (pathName, customMessage) => {
 
                 context.drawImage(image, 0, 0, image.width, image.height);
 
-                const fontSize = 100;
+                const fontSize = 200;
                 const fontFamily = 'Arial';
-                const fontColor = 'red';
+                const fontColor = 'white';
 
                 context.font = `${fontSize}px ${fontFamily}`;
                 context.fillStyle = fontColor;
-                context.textTransform = 'uppercase'
+                context.strokeStyle = 'black';
+                context.lineWidth = 2;
 
                 const text = customMessage;
                 const textWidth = context.measureText(text).width
                 const textHeight = parseInt(context.font)
                 const x = (image.width - textWidth) / 2;
-                const y = (image.height - textHeight) / 2;
+                const y = (image.height - textHeight);
 
                 context.fillText(text, x, y);
+                context.strokeText(text, x, y - 2);
+                context.strokeText(text, x, y + 2);
+                context.strokeText(text, x - 2, y);
+                context.strokeText(text, x + 2, y);
 
                 const outputFilePath = path.join(__dirname, `ImageResponse.png`);
                 const out = fs.createWriteStream(outputFilePath);
