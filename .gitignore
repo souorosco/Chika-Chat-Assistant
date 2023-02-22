@@ -105,3 +105,9 @@ dist
 
 # wwebjs browser
 .wwebjs_auth/
+
+*.jpg
+*.jpeg
+*.png
+
+yarn.lock

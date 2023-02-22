@@ -1,6 +1,10 @@
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
 const axios = require("axios")
+const imageToBase64 = require('image-to-base64');
+const { createCanvas, loadImage } = require('canvas');
+const fs = require('fs');
+const path = require('path');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -31,6 +35,85 @@ client.on("message_create", msg => {
 
 client.initialize();
 
+const trasnformTo64 = (pathName) => {
+    return new Promise((resolve, reject) => {
+        imageToBase64(pathName)
+            .then(
+                (response) => {
+                    resolve(response)
+                }
+            )
+            .catch(
+                (error) => {
+                    reject(error)
+                }
+            )
+    })
+}
+const addTextToImage = (pathName, customMessage) => {
+    return new Promise((resolve, reject) => {
+        try {
+            loadImage(__dirname + "/" + pathName).then((image) => {
+                const canvas = createCanvas(image.width, image.height);
+                const context = canvas.getContext('2d');
+
+                context.drawImage(image, 0, 0, image.width, image.height);
+
+                const fontSize = 120;
+                const fontFamily = 'Arial';
+                const fontColor = 'red';
+                context.font = `${fontSize}px ${fontFamily}`;
+                context.fillStyle = fontColor;
+
+                const text = customMessage;
+                const x = image.width / 2 - 120;
+                const y = image.height - 40;
+
+                context.fillText(text, x, y);
+
+
+                const outputFilePath = path.join(__dirname, `ImageResponse.png`);
+                const out = fs.createWriteStream(outputFilePath);
+                const stream = canvas.createPNGStream();
+                stream.pipe(out);
+
+                out.on('finish', () => {
+                    fs.stat(outputFilePath, (err, stats) => {
+                        if (err) return
+                        resolve({ path: outputFilePath, size: stats.size })
+                    })
+                });
+            });
+        } catch (error) {
+            reject(error)
+        }
+    })
+}
+
+const downloadImage = (mssg) => {
+    if (mssg.hasMedia) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const imageData = await mssg.downloadMedia()
+
+                const mimeType = imageData.mimetype.split('/')[1];
+                const extension = mimeType === 'jpeg' ? 'jpg' : mimeType;
+
+                const imageBuffer = Buffer.from(imageData.data, 'base64');
+                fs.writeFileSync(`image.${extension}`, imageBuffer, (error) => {
+                    if (error) {
+                        console.error(error);
+                    }
+                });
+                resolve(`image.${extension}`)
+            } catch (e) {
+                mssg.reply('😔 Algo deu errado!')
+                reject()
+            }
+        })
+    }
+}
+
 const help = async (msg, sender) => {
     await client.sendMessage(sender, `Os comandos disponíveis são: 🤖
 
@@ -51,8 +134,15 @@ const help = async (msg, sender) => {
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
         try {
-            const data = await msg.downloadMedia()
-            await client.sendMessage(sender, data, { sendMediaAsSticker: true })
+            const imageFromSender = await downloadImage(msg)
+            const customMessage = msg.body.split('.sticker')[1]
+            const { path, size } = await addTextToImage(imageFromSender, customMessage.length > 0 ? customMessage : '')
+            const inBase64 = await trasnformTo64(path)
+            const response = new MessageMedia()
+            response.mimetype = "image/png"
+            response.data = inBase64
+            response.filesize = size
+            await client.sendMessage(sender, response, { sendMediaAsSticker: true })
         } catch (e) {
             msg.reply("❌ Não foi possível gerar um sticker com essa mídia.")
         }
