@@ -66,8 +66,6 @@ const addTextToImage = (pathName, customMessage) => {
                 context.font = `${fontSize}px ${fontFamily}`;
                 context.fillStyle = fontColor;
                 context.textTransform = 'uppercase'
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
 
                 const text = customMessage;
                 const textWidth = context.measureText(text).width
