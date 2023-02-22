@@ -59,7 +59,7 @@ const addTextToImage = (pathName, customMessage) => {
 
                 context.drawImage(image, 0, 0, image.width, image.height);
 
-                const fontSize = 120;
+                const fontSize = 100;
                 const fontFamily = 'Arial';
                 const fontColor = 'red';
                 context.font = `${fontSize}px ${fontFamily}`;
