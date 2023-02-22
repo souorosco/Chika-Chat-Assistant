@@ -62,15 +62,20 @@ const addTextToImage = (pathName, customMessage) => {
                 const fontSize = 100;
                 const fontFamily = 'Arial';
                 const fontColor = 'red';
+
                 context.font = `${fontSize}px ${fontFamily}`;
                 context.fillStyle = fontColor;
+                context.textTransform = 'uppercase'
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
 
                 const text = customMessage;
-                const x = image.width / 2 - 120;
-                const y = image.height - 40;
+                const textWidth = context.measureText(text).width
+                const textHeight = parseInt(context.font)
+                const x = (image.width - textWidth) / 2;
+                const y = (image.height - textHeight) / 2;
 
                 context.fillText(text, x, y);
-
 
                 const outputFilePath = path.join(__dirname, `ImageResponse.png`);
                 const out = fs.createWriteStream(outputFilePath);
@@ -119,8 +124,9 @@ const help = async (msg, sender) => {
 
     🖼️
     • [foto] .sticker -> Transforma uma imagem enviada em sticker! ( *NOVO:* agora funciona com gif's)
+    • [foto] .sticker texto -> Transforma uma imagem enviada em sticker com o texto personalizado!
     • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
-    
+
     🎱
     • .8ball [pergunta] -> Responde uma pergunta de sim ou não. Descubra sua sorte!
     
