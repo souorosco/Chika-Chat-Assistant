@@ -1,11 +1,9 @@
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
 const axios = require("axios")
-const imageToBase64 = require('image-to-base64');
-const { createCanvas, loadImage } = require('canvas');
-const fs = require('fs');
-const path = require('path');
+const ImageService = require("./utils/ImageService.js")
 
+const imageService = new ImageService()
 const client = new Client({
     authStrategy: new LocalAuth(),
     ffmpegPath: '/usr/bin/ffmpeg',
@@ -13,7 +11,6 @@ const client = new Client({
         executablePath: '/usr/bin/google-chrome-stable'
     }
 });
-
 
 client.on("qr", qr => {
     qrcode.generate(qr, { small: true })
@@ -25,102 +22,17 @@ client.on("ready", () => {
 
 client.on("message_create", msg => {
     const command = msg.body.split(" ")[0];
-    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from
+    const sender = msg.from.includes("5517997122611") ? msg.to : msg.from //5517996529815
     if (command === "/sticker" || command === "/8ball") msg.reply("Por favor, utilize .comando no lugar de /comando")
     if (command === ".help") help(msg, sender)
     if (command === ".sticker") generateSticker(msg, sender)
+    if (command === ".magic") magic(msg, sender)
+    if (command === ".magicSticker") magicSticker(msg, sender)
     if (command === ".8ball") eightBallMsg(msg)
     if (command === ".roll") rollDice(msg)
 });
 
 client.initialize();
-
-const trasnformTo64 = (pathName) => {
-    return new Promise((resolve, reject) => {
-        imageToBase64(pathName)
-            .then(
-                (response) => {
-                    resolve(response)
-                }
-            )
-            .catch(
-                (error) => {
-                    reject(error)
-                }
-            )
-    })
-}
-const addTextToImage = (pathName, customMessage) => {
-    return new Promise((resolve, reject) => {
-        try {
-            loadImage(__dirname + "/" + pathName).then((image) => {
-                const canvas = createCanvas(image.width, image.height);
-                const context = canvas.getContext('2d');
-
-                context.drawImage(image, 0, 0, image.width, image.height);
-
-                const fontSize = 200;
-                const fontFamily = 'Arial';
-                const fontColor = 'white';
-
-                context.font = `${fontSize}px ${fontFamily}`;
-                context.fillStyle = fontColor;
-                context.strokeStyle = 'black';
-                context.lineWidth = 2;
-
-                const text = customMessage;
-                const textWidth = context.measureText(text).width
-                const textHeight = parseInt(context.font)
-                const x = (image.width - textWidth) / 2;
-                const y = (image.height - textHeight);
-
-                context.fillText(text, x, y);
-                context.strokeText(text, x, y - 2);
-                context.strokeText(text, x, y + 2);
-                context.strokeText(text, x - 2, y);
-                context.strokeText(text, x + 2, y);
-
-                const outputFilePath = path.join(__dirname, `ImageResponse.png`);
-                const out = fs.createWriteStream(outputFilePath);
-                const stream = canvas.createPNGStream();
-                stream.pipe(out);
-
-                out.on('finish', () => {
-                    fs.stat(outputFilePath, (err, stats) => {
-                        if (err) return
-                        resolve({ path: outputFilePath, size: stats.size })
-                    })
-                });
-            });
-        } catch (error) {
-            reject(error)
-        }
-    })
-}
-
-const downloadImage = (mssg) => {
-    if (mssg.hasMedia) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const imageData = await mssg.downloadMedia()
-
-                const mimeType = imageData.mimetype.split('/')[1];
-                const extension = mimeType === 'jpeg' ? 'jpg' : mimeType;
-
-                const imageBuffer = Buffer.from(imageData.data, 'base64');
-                fs.writeFileSync(`image.${extension}`, imageBuffer, (error) => {
-                    if (error) {
-                        console.error(error);
-                    }
-                });
-                resolve(`image.${extension}`)
-            } catch (e) {
-                mssg.reply('😔 Algo deu errado!')
-                reject()
-            }
-        })
-    }
-}
 
 const help = async (msg, sender) => {
     await client.sendMessage(sender, `Os comandos disponíveis são: 🤖
@@ -128,6 +40,8 @@ const help = async (msg, sender) => {
     🖼️
     • [foto] .sticker -> Transforma uma imagem enviada em sticker! ( *NOVO:* agora funciona com gif's)
     • [foto] .sticker texto -> Transforma uma imagem enviada em sticker com o texto personalizado!
+    • [foto] .magic -> Transforma uma imagem enviada em sticker distorcido!
+    • [foto] .magicSticker texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
     • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
 
     🎱
@@ -140,13 +54,46 @@ const help = async (msg, sender) => {
     Mais comandos em breve!`)
 }
 
+const magicSticker = async (msg, sender) => {
+    try {
+        const customMessage = msg.body.split('.magicSticker')[1]
+        const { pathResponse } = await imageService.downloadImage(msg)
+        const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', true)
+        const inBase64 = await imageService.trasnformImageTo64(path)
+        const response = new MessageMedia()
+        response.mimetype = "image/png"
+        response.data = inBase64
+        response.filesize = size
+        await client.sendMessage(sender, response, { sendMediaAsSticker: true })
+    } catch (e) {
+        msg.reply("❌ Não foi possível gerar um sticker com essa mídia.")
+    }
+}
+
+const magic = async (msg, sender) => {
+    if (msg.hasMedia) {
+        try {
+            const { pathResponse } = await imageService.downloadImage(msg)
+            const { path, size } = await imageService.imageManipulation(pathResponse, '', true)
+            const inBase64 = await imageService.trasnformImageTo64(path)
+            const response = new MessageMedia()
+            response.mimetype = "image/png"
+            response.data = inBase64
+            response.filesize = size
+            await client.sendMessage(sender, response, { sendMediaAsSticker: true })
+        } catch (error) {
+            msg.reply("❌ Não foi possível fazer uma mágica com essa mídia.")
+        }
+    }
+}
+
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
         try {
-            const imageFromSender = await downloadImage(msg)
             const customMessage = msg.body.split('.sticker')[1]
-            const { path, size } = await addTextToImage(imageFromSender, customMessage.length > 0 ? customMessage : '')
-            const inBase64 = await trasnformTo64(path)
+            const { pathResponse } = await imageService.downloadImage(msg)
+            const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', false)
+            const inBase64 = await imageService.trasnformImageTo64(path)
             const response = new MessageMedia()
             response.mimetype = "image/png"
             response.data = inBase64
