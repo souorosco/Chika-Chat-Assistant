@@ -4,6 +4,7 @@ const axios = require("axios")
 const ImageService = require("./utils/ImageService.js")
 
 const imageService = new ImageService()
+
 const client = new Client({
     authStrategy: new LocalAuth(),
     ffmpegPath: '/usr/bin/ffmpeg',
@@ -22,12 +23,11 @@ client.on("ready", () => {
 
 client.on("message_create", msg => {
     const command = msg.body.split(" ")[0];
-    const sender = msg.from.includes("5517997122611") ? msg.to : msg.from //5517996529815
+    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from //5517996529815 //5517997122611
     if (command === "/sticker" || command === "/8ball") msg.reply("Por favor, utilize .comando no lugar de /comando")
     if (command === ".help") help(msg, sender)
     if (command === ".sticker") generateSticker(msg, sender)
     if (command === ".magic") magic(msg, sender)
-    if (command === ".magicSticker") magicSticker(msg, sender)
     if (command === ".8ball") eightBallMsg(msg)
     if (command === ".roll") rollDice(msg)
 });
@@ -41,7 +41,7 @@ const help = async (msg, sender) => {
     • [foto] .sticker -> Transforma uma imagem enviada em sticker! ( *NOVO:* agora funciona com gif's)
     • [foto] .sticker texto -> Transforma uma imagem enviada em sticker com o texto personalizado!
     • [foto] .magic -> Transforma uma imagem enviada em sticker distorcido!
-    • [foto] .magicSticker texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
+    • [foto] .magic texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
     • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
 
     🎱
@@ -54,9 +54,9 @@ const help = async (msg, sender) => {
     Mais comandos em breve!`)
 }
 
-const magicSticker = async (msg, sender) => {
+const magic = async (msg, sender) => {
     try {
-        const customMessage = msg.body.split('.magicSticker')[1]
+        const customMessage = msg.body.split('.magic')[1]
         const { pathResponse } = await imageService.downloadImage(msg)
         const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', true)
         const inBase64 = await imageService.trasnformImageTo64(path)
@@ -70,22 +70,6 @@ const magicSticker = async (msg, sender) => {
     }
 }
 
-const magic = async (msg, sender) => {
-    if (msg.hasMedia) {
-        try {
-            const { pathResponse } = await imageService.downloadImage(msg)
-            const { path, size } = await imageService.imageManipulation(pathResponse, '', true)
-            const inBase64 = await imageService.trasnformImageTo64(path)
-            const response = new MessageMedia()
-            response.mimetype = "image/png"
-            response.data = inBase64
-            response.filesize = size
-            await client.sendMessage(sender, response, { sendMediaAsSticker: true })
-        } catch (error) {
-            msg.reply("❌ Não foi possível fazer uma mágica com essa mídia.")
-        }
-    }
-}
 
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
