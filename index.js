@@ -1,6 +1,9 @@
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js")
 const qrcode = require("qrcode-terminal")
 const axios = require("axios")
+const ImageService = require("./utils/ImageService.js")
+
+const imageService = new ImageService()
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -9,7 +12,6 @@ const client = new Client({
         executablePath: '/usr/bin/google-chrome-stable'
     }
 });
-
 
 client.on("qr", qr => {
     qrcode.generate(qr, { small: true })
@@ -21,10 +23,11 @@ client.on("ready", () => {
 
 client.on("message_create", msg => {
     const command = msg.body.split(" ")[0];
-    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from
+    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from //5517996529815 //5517997122611
     if (command === "/sticker" || command === "/8ball") msg.reply("Por favor, utilize .comando no lugar de /comando")
     if (command === ".help") help(msg, sender)
     if (command === ".sticker") generateSticker(msg, sender)
+    if (command === ".magic") magic(msg, sender)
     if (command === ".8ball") eightBallMsg(msg)
     if (command === ".roll") rollDice(msg)
 });
@@ -36,8 +39,11 @@ const help = async (msg, sender) => {
 
     🖼️
     • [foto] .sticker -> Transforma uma imagem enviada em sticker! ( *NOVO:* agora funciona com gif's)
+    • [foto] .sticker texto -> Transforma uma imagem enviada em sticker com o texto personalizado!
+    • [foto] .magic -> Transforma uma imagem enviada em sticker distorcido!
+    • [foto] .magic texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
     • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
-    
+
     🎱
     • .8ball [pergunta] -> Responde uma pergunta de sim ou não. Descubra sua sorte!
     
@@ -48,11 +54,35 @@ const help = async (msg, sender) => {
     Mais comandos em breve!`)
 }
 
+const magic = async (msg, sender) => {
+    try {
+        const customMessage = msg.body.split('.magic')[1]
+        const { pathResponse } = await imageService.downloadImage(msg)
+        const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', true)
+        const inBase64 = await imageService.trasnformImageTo64(path)
+        const response = new MessageMedia()
+        response.mimetype = "image/png"
+        response.data = inBase64
+        response.filesize = size
+        await client.sendMessage(sender, response, { sendMediaAsSticker: true })
+    } catch (e) {
+        msg.reply("❌ Não foi possível gerar um sticker com essa mídia.")
+    }
+}
+
+
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
         try {
-            const data = await msg.downloadMedia()
-            await client.sendMessage(sender, data, { sendMediaAsSticker: true })
+            const customMessage = msg.body.split('.sticker')[1]
+            const { pathResponse } = await imageService.downloadImage(msg)
+            const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', false)
+            const inBase64 = await imageService.trasnformImageTo64(path)
+            const response = new MessageMedia()
+            response.mimetype = "image/png"
+            response.data = inBase64
+            response.filesize = size
+            await client.sendMessage(sender, response, { sendMediaAsSticker: true })
         } catch (e) {
             msg.reply("❌ Não foi possível gerar um sticker com essa mídia.")
         }
