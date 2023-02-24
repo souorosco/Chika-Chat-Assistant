@@ -17,6 +17,7 @@ const client = new Client({
     }
 });
 
+
 console.log("O Chika Chat: Instances OK.");
 
 client.on("qr", qr => {
@@ -64,31 +65,26 @@ Mais comandos em breve!`);
 const magic = async (msg, sender) => {
     try {
         const customMessage = msg.body.split('.magic')[1];
-        const { pathResponse } = await imageService.downloadImage(msg);
-        const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', true);
-        const inBase64 = await imageService.trasnformImageTo64(path);
+        const imageInBase64 = await imageService.downloadImage(msg);
+        const { canvasResponse } = await imageService.imageManipulation(imageInBase64, customMessage.length > 0 ? customMessage : '', true);
         const response = new MessageMedia();
         response.mimetype = "image/png";
-        response.data = inBase64;
-        response.filesize = size;
+        response.data = canvasResponse;
         await client.sendMessage(sender, response, { sendMediaAsSticker: true });
     } catch (e) {
         msg.reply("❌ Não foi possível gerar um sticker com essa mídia.");
     }
 };
 
-
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
         try {
             const customMessage = msg.body.split('.sticker')[1];
-            const { pathResponse } = await imageService.downloadImage(msg);
-            const { path, size } = await imageService.imageManipulation(pathResponse, customMessage.length > 0 ? customMessage : '', false);
-            const inBase64 = await imageService.trasnformImageTo64(path);
+            const imageInBase64 = await imageService.downloadImage(msg);
+            const { canvasResponse } = await imageService.imageManipulation(imageInBase64, customMessage.length > 0 ? customMessage : '', false);
             const response = new MessageMedia();
             response.mimetype = "image/png";
-            response.data = inBase64;
-            response.filesize = size;
+            response.data = canvasResponse;
             await client.sendMessage(sender, response, { sendMediaAsSticker: true });
         } catch (e) {
             msg.reply("❌ Não foi possível gerar um sticker com essa mídia.");

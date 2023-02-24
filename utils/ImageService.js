@@ -1,32 +1,14 @@
 const { createCanvas, loadImage } = require('canvas');
-const fs = require('fs');
-const path = require('path');
-
 class ImageService {
     constructor() {
         this.SERVICE_NAME = 'IMAGE SERVICE';
         this.OBJECT_NAME = 'Image Service';
     }
 
-    trasnformImageTo64(pathName) {
+    imageManipulation(imageData, customMessage, magic) {
         return new Promise((resolve, reject) => {
             try {
-                const imageFile = fs.readFileSync(pathName)
-                const base64 = Buffer.from(imageFile).toString('base64')
-                resolve(base64)
-            } catch (error) {
-                reject({
-                    erro: error.message,
-                    serviceName: this.SERVICE_NAME
-                })
-            }
-        })
-    }
-
-    imageManipulation(pathName, customMessage, magic) {
-        return new Promise((resolve, reject) => {
-            try {
-                loadImage(pathName).then((image) => {
+                loadImage(imageData).then((image) => {
                     const canvas = createCanvas(image.width, image.height);
                     const context = canvas.getContext('2d');
 
@@ -77,17 +59,7 @@ class ImageService {
                     context.strokeText(text, x, y + 2);
                     context.strokeText(text, x - 2, y);
                     context.strokeText(text, x + 2, y);
-                    const outputFilePath = path.join(__dirname, `ImageResponse.png`);
-                    const out = fs.createWriteStream(outputFilePath);
-                    const stream = canvas.createPNGStream();
-                    stream.pipe(out);
-
-                    out.on('finish', () => {
-                        fs.stat(outputFilePath, (err, stats) => {
-                            if (err) return
-                            resolve({ path: outputFilePath, size: stats.size })
-                        })
-                    });
+                    resolve({ canvasResponse: canvas.toDataURL().split('base64,')[1] })
                 });
             } catch (error) {
                 reject({
@@ -104,16 +76,13 @@ class ImageService {
                 try {
                     const imageData = await mssg.downloadMedia()
 
+
                     const mimeType = imageData.mimetype.split('/')[1];
                     const extension = mimeType === 'jpeg' ? 'jpg' : mimeType;
 
-                    const imageBuffer = Buffer.from(imageData.data, 'base64');
-                    fs.writeFileSync(__dirname + `/image.${extension}`, imageBuffer, (error) => {
-                        if (error) {
-                            console.error(error);
-                        }
-                    });
-                    resolve({ pathResponse: __dirname + `/image.${extension}`, type: extension })
+                    const response = `data:image/${extension};base64,${imageData.data}`
+
+                    resolve(response)
                 } catch (e) {
                     reject({
                         erro: e.message,
