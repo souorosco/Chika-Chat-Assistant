@@ -1,4 +1,3 @@
-const imageToBase64 = require('image-to-base64');
 const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
@@ -11,20 +10,16 @@ class ImageService {
 
     trasnformImageTo64(pathName) {
         return new Promise((resolve, reject) => {
-            imageToBase64(pathName)
-                .then(
-                    (response) => {
-                        resolve(response)
-                    }
-                )
-                .catch(
-                    (error) => {
-                        reject({
-                            erro: error.message,
-                            serviceName: this.SERVICE_NAME
-                        })
-                    }
-                )
+            try {
+                const imageFile = fs.readFileSync(pathName)
+                const base64 = Buffer.from(imageFile).toString('base64')
+                resolve(base64)
+            } catch (error) {
+                reject({
+                    erro: error.message,
+                    serviceName: this.SERVICE_NAME
+                })
+            }
         })
     }
 
