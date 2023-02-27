@@ -47,7 +47,6 @@ const help = async (msg, sender) => {
 
 🖼️
 • [foto] .sticker -> Transforma uma imagem enviada em sticker!
-• [foto] .sticker texto -> Transforma uma imagem enviada em sticker com o texto personalizado!
 • [foto] .magic -> Transforma uma imagem enviada em sticker distorcido!
 • [foto] .magic texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
 • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
@@ -79,13 +78,15 @@ const magic = async (msg, sender) => {
 const generateSticker = async (msg, sender) => {
     if (msg.hasMedia) {
         try {
-            const customMessage = msg.body.split('.sticker')[1];
-            const imageInBase64 = await imageService.downloadImage(msg);
-            const { canvasResponse } = await imageService.imageManipulation(imageInBase64, customMessage.length > 0 ? customMessage : '', false);
-            const response = new MessageMedia();
-            response.mimetype = "image/png";
-            response.data = canvasResponse;
-            await client.sendMessage(sender, response, { sendMediaAsSticker: true });
+            // const customMessage = msg.body.split('.sticker')[1];
+            // const imageInBase64 = await imageService.downloadImage(msg);
+            // const { canvasResponse } = await imageService.imageManipulation(imageInBase64, customMessage.length > 0 ? customMessage : '', false);
+            // const response = new MessageMedia();
+            // response.mimetype = "image/png";
+            // response.data = canvasResponse;
+            // await client.sendMessage(sender, response, { sendMediaAsSticker: true });
+            const data = await msg.downloadMedia()
+            await client.sendMessage(sender, data, { sendMediaAsSticker: true })
         } catch (e) {
             msg.reply("❌ Não foi possível gerar um sticker com essa mídia.");
         }
