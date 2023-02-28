@@ -1,12 +1,14 @@
 console.log("O Chika Chat: Started.");
 
+const cluster = require('cluster');
 const { Client, MessageMedia, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const ImageService = require("./utils/ImageService.js");
+const numCPUs = require('os').cpus().length;
 
 console.log("O Chika Chat: Import OK.");
 
-const imageService = new ImageService();
+const imageService = new ImageService()
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -17,30 +19,48 @@ const client = new Client({
     }
 });
 
+if (cluster.isMaster) {
+    console.log(`Master ${process.pid} is running`);
 
-console.log("O Chika Chat: Instances OK.");
+    for (let i = 0; i < numCPUs / 2; i++) {
+        cluster.fork()
+    }
 
-client.on("qr", qr => {
-    qrcode.generate(qr, { small: true });
-});
+    cluster.on('exit', (worker) => {
+        console.log(`Worker ${worker.process.pid} died`);
+        cluster.fork();
+    });
+} else {
 
-console.log("O Chika Chat: QR Code OK.");
+    console.log(`Worker ${process.pid} started`);
 
-client.on("ready", () => {
-    console.log("O Chika Chat is ready!");
-});
+    console.log("O Chika Chat: Instances OK.");
 
-client.on("message_create", msg => {
-    const command = msg.body.split(" ")[0];
-    const sender = msg.from.includes("5517996529815") ? msg.to : msg.from; //5517996529815 //5517997122611
-    if (command === ".help") help(msg, sender);
-    if (command === ".sticker") generateSticker(msg, sender);
-    if (command === ".magic") magic(msg, sender);
-    if (command === ".8ball") eightBallMsg(msg);
-    if (command === ".roll") rollDice(msg);
-});
+    client.on("qr", qr => {
+        qrcode.generate(qr, { small: true });
+    });
 
-client.initialize();
+    console.log("O Chika Chat: QR Code OK.");
+
+    client.on("ready", () => {
+        console.log("O Chika Chat is ready!");
+    });
+
+    client.on("message_create", msg => {
+        const command = msg.body.split(" ")[0];
+        const sender = msg.from.includes("5517996529815") ? msg.to : msg.from; //5517996529815 //5517997122611
+        if (command === ".help") help(msg, sender);
+        if (command === ".sticker") generateSticker(msg, sender);
+        if (command === ".magic") magic(msg, sender);
+        if (command === ".8ball") eightBallMsg(msg);
+        if (command === ".roll") rollDice(msg);
+    });
+
+    client.initialize();
+
+    console.log(`Worker ${process.pid} está rodando o Chika Chat`);
+}
+
 
 const help = async (msg, sender) => {
     await client.sendMessage(sender, `Os comandos disponíveis são: 🤖
