@@ -68,7 +68,7 @@ const help = async (msg, sender) => {
 🖼️
 • [foto] .sticker -> Transforma uma imagem enviada em sticker!
 • [foto] .magic -> Transforma uma imagem enviada em sticker distorcido!
-• [foto] .magic texto -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
+• [foto] .magic [texto] -> Transforma uma imagem enviada em sticker distorcido com o texto personalizado!
 • .sticker [link] -> Transforma a imagem do link em sticker! (não faz stickers animados)
 
 🎱
