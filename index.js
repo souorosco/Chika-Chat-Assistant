@@ -58,7 +58,7 @@ mongoose.connect(process.env.DB_HOST, {
 
         client.on("message_create", async msg => {
             const command = msg.body.split(" ")[0];
-            const sender = msg.from.includes("5517997122611") ? msg.to : msg.from; //5517996529815 //5517997122611
+            const sender = msg.from.includes("5517996529815") ? msg.to : msg.from; //5517996529815 //5517997122611
             if (command === ".help") help(msg, sender);
             if (command === ".sticker") generateSticker(msg, sender);
             if (command === ".magic") magic(msg, sender);
