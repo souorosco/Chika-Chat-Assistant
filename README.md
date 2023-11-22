@@ -1,8 +1,6 @@
 # Chika-Chat-Assistant
 ### A whatsapp bot developed in JS to be a personal assistant.
 
-It's already working 24h! Try it yourself [here!](https://wa.me/5517996529815)
-
 ####	Os comandos disponíveis são: 🤖
 
 	🖼️
